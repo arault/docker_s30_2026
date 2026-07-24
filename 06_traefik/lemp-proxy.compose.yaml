@@ -29,6 +29,10 @@ services:
 
   phpsvc:
     image: ${PHP_IMAGE}:${PHP_IMAGE_TAG}
+    pull_policy: missing # valeur par défaut = pull de l'image si possible, build sinon
+    build:
+      context: ../03_dockerfile/
+      dockerfile: ./Dockerfile
     container_name: php
     restart: unless-stopped
     networks:
