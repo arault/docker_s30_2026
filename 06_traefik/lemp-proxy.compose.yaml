@@ -1,0 +1,56 @@
+---
+name: lemp-proxy
+services:
+  websvc:
+    image: nginx:${NGINX_IMAGE_TAG}
+    container_name: web
+    restart: unless-stopped
+    networks:
+      lempnet:
+        ipv4_address: ${LEMPNET_PREFIX}.${NGINX_IPV4}
+      proxynet:
+    volumes:
+      - ./html/:/usr/share/nginx/html/
+      - ./nginx-conf/:/etc/nginx/conf.d/
+    depends_on:
+      - phpsvc
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxynet
+      - traefik.http.routers.web.rule=Host(`www.stage.local`)
+
+  phpsvc:
+    image: ${PHP_IMAGE}:${PHP_IMAGE_TAG}
+    container_name: php
+    restart: unless-stopped
+    networks:
+      lempnet:
+        ipv4_address: ${LEMPNET_PREFIX}.${PHP_IPV4}
+    volumes:
+      - ./html/:/var/www/html/
+
+  dbsvc:
+    image: mariadb:${MARIADB_IMAGE_TAG}
+    container_name: db
+    restart: unless-stopped
+    networks:
+      lempnet:
+        ipv4_address: ${LEMPNET_PREFIX}.${MARIADB_IPV4}
+    volumes:
+      - datadb:/var/lib/mysql/
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_MDP_ROOT}
+
+volumes:
+  datadb:
+
+networks:
+  lempnet:
+    ipam:
+      config:
+        - subnet: ${LEMPNET_PREFIX}.0.0/16
+          gateway: ${LEMPNET_PREFIX}.255.254
+    driver_opts:
+      com.docker.network.bridge.name: lempnet0
+  proxynet:
+    external: true
