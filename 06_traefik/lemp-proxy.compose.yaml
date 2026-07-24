@@ -18,6 +18,11 @@ services:
       - traefik.enable=true
       - traefik.docker.network=proxynet
       - traefik.http.routers.web.rule=Host(`www.stage.local`)
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE}
+        max-file: ${LOG_MAX_FILE}
 
   phpsvc:
     image: ${PHP_IMAGE}:${PHP_IMAGE_TAG}
@@ -28,6 +33,11 @@ services:
         ipv4_address: ${LEMPNET_PREFIX}.${PHP_IPV4}
     volumes:
       - ./html/:/var/www/html/
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE}
+        max-file: ${LOG_MAX_FILE}
 
   dbsvc:
     image: mariadb:${MARIADB_IMAGE_TAG}
@@ -40,6 +50,11 @@ services:
       - datadb:/var/lib/mysql/
     environment:
       - MARIADB_ROOT_PASSWORD=${MARIADB_MDP_ROOT}
+    logging:
+      driver: json-file
+      options:
+        max-size: ${LOG_MAX_SIZE}
+        max-file: ${LOG_MAX_FILE}
 
 volumes:
   datadb:
