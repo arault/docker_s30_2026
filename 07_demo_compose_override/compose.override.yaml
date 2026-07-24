@@ -1,0 +1,65 @@
+---
+x-logging: &default-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: ${LOG_MAX_SIZE}
+      max-file: ${LOG_MAX_FILE}
+
+name: lemp-override
+services:
+  websvc:
+    image: nginx:${NGINX_IMAGE_TAG}
+    restart: unless-stopped
+    networks:
+      lempnet:
+        ipv4_address: ${LEMPNET_PREFIX}.${NGINX_IPV4}
+      proxynet:
+    volumes:
+      - ./html/:/usr/share/nginx/html/
+      - ./nginx-conf/:/etc/nginx/conf.d/
+    depends_on:
+      - phpsvc
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxynet
+      - traefik.http.routers.web.rule=Host(`www.stage.local`)
+    <<: *default-logging
+
+  phpsvc:
+    image: ${PHP_IMAGE}:${PHP_IMAGE_TAG}
+    pull_policy: missing # valeur par défaut = pull de l'image si possible, build sinon
+    build:
+      context: ../03_dockerfile/
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    networks:
+      lempnet:
+        ipv4_address: ${LEMPNET_PREFIX}.${PHP_IPV4}
+    volumes:
+      - ./html/:/var/www/html/
+    <<: *default-logging
+
+  dbsvc:
+    image: mariadb:${MARIADB_IMAGE_TAG}
+    restart: unless-stopped
+    networks:
+      lempnet:
+        ipv4_address: ${LEMPNET_PREFIX}.${MARIADB_IPV4}
+    volumes:
+      - datadb:/var/lib/mysql/
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_MDP_ROOT}
+    <<: *default-logging
+
+volumes:
+  datadb:
+
+networks:
+  lempnet:
+    ipam:
+      config:
+        - subnet: ${LEMPNET_PREFIX}.0.0/16
+          gateway: ${LEMPNET_PREFIX}.255.254
+  proxynet:
+    external: true
