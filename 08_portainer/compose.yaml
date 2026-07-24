@@ -1,0 +1,18 @@
+---
+services:
+  portainer:
+    image: portainer/portainer-ce:lts
+    # au 2026-07-24, équivalent à
+    #image: portainer/portainer-ce:2.39.5
+    # le tag alpine désigne la variante basée sur Alpine, de l'image Portainer lts
+    #image: portainer/portainer-ce:alpine
+    container_name: portainer
+    ports:
+      - 9000:9000
+    volumes:
+      - portainer:/data
+      - /run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  portainer:
